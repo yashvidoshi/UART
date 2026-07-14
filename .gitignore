@@ -1,0 +1,9 @@
+# Simulation binaries
+uart_sim
+tx_sim
+
+# VCD wave traces
+*.vcd
+
+# OS generated files
+.DS_Store

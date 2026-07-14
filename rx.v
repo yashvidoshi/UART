@@ -1,6 +1,6 @@
 module rx(input clk, input rst, input rx, output reg [7:0] rx_data, output reg rx_done);
 
-parameter CLKS_PER_BIT = 104;
+parameter CLKS_PER_BIT = 868;
 
 localparam IDLE = 0; //STATES
 localparam START = 1;
@@ -8,7 +8,7 @@ localparam DATA = 2;
 localparam STOP = 3;
 
 reg [1:0] state; //registers
-reg [7:0] clk_count;
+reg [9:0] clk_count;
 reg [2:0] bit_index;
 reg [7:0] data_reg;
 
@@ -87,8 +87,6 @@ always @(posedge clk or posedge rst) begin
                 state<=IDLE;
             end
     end
-
-
 
         endcase
     end

@@ -44,7 +44,7 @@ initial begin
     #10;
     tx_start=0;
 
-    #12000;
+    #100000;
     $finish;
 end
 endmodule
