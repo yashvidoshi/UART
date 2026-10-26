@@ -134,18 +134,6 @@ Currently building larger hardware projects including custom CPUs and digital sy
 
 ---
 
-# Connect With Me
-
-## GitHub
-
-[https://github.com/Mage-imm](https://github.com/Mage-imm)
-
-## LinkedIn
-
-[https://linkedin.com/in/manav-shah-0630863ab](https://linkedin.com/in/manav-shah-0630863ab)
-
----
-
 # License
 
 This project is open-source and available under the MIT License.
