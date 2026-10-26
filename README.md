@@ -1,139 +1,151 @@
-# UART
 # UART Communication System in SystemVerilog
 
-## Overview
-
-This project is a complete **UART (Universal Asynchronous Receiver Transmitter)** implementation written in **SystemVerilog**.
-It includes:
-
-* UART Transmitter (`Uart_tx.sv`)
-* UART Receiver (`Uart_rx.sv`)
-* Top UART Module (`UART.sv`)
-* Testbench (`Uart_tb.sv`)
-* Additional experimental/test module (`trial.sv`)
-
-The project was developed as part of my digital design and VLSI learning journey focused on RTL design, communication protocols, and hardware verification.
+A complete, robust **UART (Universal Asynchronous Receiver Transmitter)** implementation written in **SystemVerilog**, featuring independent transmitter and receiver modules, configurable baud rate timing, 16x oversampling RX clocking, glitch filtering, and self-checking testbench verification with waveform analysis.
 
 ---
 
-# Features
+## Features
 
-* Fully written in **SystemVerilog**
-* Modular RTL design
-* UART TX and RX implementation
-* Testbench for simulation and verification
-* Designed for FPGA/ASIC learning
-* Clean and scalable architecture
-* Beginner-friendly communication protocol project
-
----
-
-# File Structure
-
-```bash
-├── UART.sv          # Top-level UART module
-├── Uart_tx.sv       # UART transmitter
-├── Uart_rx.sv       # UART receiver
-├── Uart_tb.sv       # Testbench for simulation
-├── trial.sv         # Experimental/testing module
-└── README.md
-```
+- **Full SystemVerilog Implementation**: Written using modern SystemVerilog constructs (`logic`, `always_ff`, `always_comb`, `typedef enum`).
+- **UART Transmitter (`uart_tx`)**: FSM-driven (IDLE, START, DATA, STOP) with write-request latching and accurate bit-period alignment.
+- **UART Receiver (`uart_rx`)**: 16x oversampled clocking, mid-bit sample synchronization, glitch rejection on start bit, and active stop-bit verification.
+- **Baud Rate Generator (`Baud_generator`)**: Generates transmitter baud pulse (`tx_en`) and 16x oversampling receiver pulse (`rx_en`) from a master 50 MHz clock.
+- **Self-Checking Testbench (`uart_tb`)**: Automated loopback verification transmitting multiple bytes (including ASCII `'I'` / `0x49`, `0xA6`, `0x67`) with real-time pass/fail assertions.
+- **Waveform Analysis**: Compatible with [Surfer](https://gitlab.com/surfer-project/surfer) and GTKWave.
 
 ---
 
-# UART Basics
-
-UART is a serial communication protocol used for transmitting and receiving data between devices.
-
-### Communication Format
+## File Structure
 
 ```text
-| Start Bit | Data Bits | Stop Bit |
+├── UART.sv                 # Top-level UART integration module
+├── Uart_tx.sv              # UART transmitter with FSM control
+├── Uart_rx.sv              # UART receiver with 16x oversampling & glitch filter
+├── trial.sv                # Configurable Baud Rate Generator module
+├── Uart_tb.sv              # Self-checking loopback testbench
+├── simulation_waveform.png # Full simulation waveform screenshot
+├── waveform_detail.png     # Detailed waveform zoom on byte transmission
+└── README.md               # Project documentation
 ```
 
-Typical UART configuration:
+---
 
-* 8 Data Bits
-* No Parity
-* 1 Stop Bit
+## UART Frame Format
+
+Standard **8-N-1** configuration:
+
+```text
+| IDLE | START | D0 | D1 | D2 | D3 | D4 | D5 | D6 | D7 | STOP | IDLE |
+|  1   |   0   |              LSB First              |  1   |  1   |
+```
+
+- **Baud Rate**: 9600 bps (configurable via `Baud_generator`)
+- **System Clock**: 50 MHz
+- **Oversampling**: 16x for receiver sampling
 
 ---
 
-# Simulation
+## Compilation and Simulation
 
-This project can be simulated using:
+### Prerequisites
 
-* ModelSim
-* QuestaSim
-* Vivado Simulator
-* Icarus Verilog
-* Verilator
+- [Icarus Verilog](https://steveicarus.github.io/iverilog/) (`iverilog` & `vvp`)
+- [Surfer](https://gitlab.com/surfer-project/surfer) or [GTKWave](https://gtkwave.sourceforge.net/)
 
----
-
-# Example Compilation
-
-## Using Icarus Verilog
+### 1. Compile
 
 ```bash
-iverilog -g2012 UART.sv Uart_tx.sv Uart_rx.sv Uart_tb.sv -o uart_sim
+iverilog -g2012 -o uart_sim UART.sv Uart_tx.sv Uart_rx.sv trial.sv Uart_tb.sv
+```
+
+### 2. Run Simulation
+
+```bash
 vvp uart_sim
 ```
 
----
+### Simulation Output
 
-# Waveform Viewing
+```text
+VCD info: dumpfile wave.vcd opened for output.
+==================================================
+[UART TX] Transmitting Byte 1: 0x49 ('I', 01001001)
+[UART RX] Received Byte 1:     0x49 ('I', 01001001) at 1092110000 ps
+[STATUS]  Byte 1 Verification: SUCCESS (Matched 'I' / 0x49)
+==================================================
+[UART TX] Transmitting Byte 2: 0xa6 (10100110)
+[UART RX] Received Byte 2:     0xa6 (10100110) at 2236110000 ps
+[STATUS]  Byte 2 Verification: SUCCESS (Matched 0xA6)
+==================================================
+[UART TX] Transmitting Byte 3: 0x67 (01100111)
+[UART RX] Received Byte 3:     0x67 (01100111) at 3380110000 ps
+[STATUS]  Byte 3 Verification: SUCCESS (Matched 0x67)
+==================================================
+==================================================
+[SIM] ALL TESTS PASSED! FULL DUPLEX VERIFICATION COMPLETE.
+==================================================
+```
 
-If waveform dumping is enabled:
+### 3. View Waveform
 
 ```bash
-gtkwave dump.vcd
+surfer wave.vcd
+```
+*Or using GTKWave:*
+```bash
+gtkwave wave.vcd
 ```
 
 ---
 
-# Learning Outcomes
+## Simulation Screenshots
 
-Through this project I learned:
+### 1. Full Simulation Waveform Overview
+Shows all three bytes transmitted and received through loopback:
 
-* RTL Design using SystemVerilog
-* Finite State Machines (FSMs)
-* Serial Communication Protocols
-* Timing and Synchronization
-* Testbench Development
-* Digital Design Debugging
-* Hardware Verification Basics
+![Full Simulation Waveform](simulation_waveform.png)
 
----
+### 2. Detailed Bit-Level Waveform Zoom
+Shows start bit detection, 8 data bits (LSB-first `0x49` / ASCII `'I'`), stop bit, and `rx_rdy` flag trigger:
 
-# Future Improvements
-
-Planned upgrades for the project:
-
-* Configurable baud rate generator
-* Parity bit support
-* FIFO buffering
-* Error detection
-* AXI/APB interface integration
-* FPGA implementation
+![Detailed Waveform Zoom](waveform_detail.png)
 
 ---
 
-# About Me
+## Internal Signals Observed
 
-I am an Electronics and VLSI student passionate about:
-
-* Computer Architecture
-* Digital Design
-* RTL Development
-* FPGA Design
-* Processor Design
-* Low-Level Hardware Systems
-
-Currently building larger hardware projects including custom CPUs and digital systems.
+| Signal | Direction | Description |
+|---|---|---|
+| `clk` | Input | System clock (50 MHz, period = 20 ns) |
+| `rst` | Input | Active-low asynchronous reset |
+| `tx_start` | Input | Strobe to initiate byte transmission |
+| `tx_data [7:0]` | Input | 8-bit parallel byte to transmit |
+| `tx` | Output | Serial UART transmit line |
+| `rx` | Input | Serial UART receive line |
+| `rx_data [7:0]` | Output | Reconstructed 8-bit received parallel byte |
+| `rx_rdy` | Output | Flag asserted when valid byte received |
+| `rx_clr` | Input | Strobe to acknowledge and clear `rx_rdy` |
 
 ---
 
-# License
+## Waveform Verification Highlights
+
+- **Start Bit Detection**: RX detects falling edge on `rx` and validates low level at sample 7.
+- **Mid-Bit Sampling**: Receiver samples each data bit at mid-point (sample 7 of 16) for maximum noise margin.
+- **Stop Bit Verification**: RX verifies high level on stop bit before asserting `rx_rdy`.
+- **Zero Data Corruption**: 100% data fidelity verified across back-to-back transmissions.
+
+---
+
+## Author
+
+**Yashvi Doshi**  
+- GitHub: [yashvidoshi](https://github.com/yashvidoshi)  
+- Repository: [yashvidoshi/UART](https://github.com/yashvidoshi/UART)  
+- Verilog Archive: [yashvidoshi/uart-verilog](https://github.com/yashvidoshi/uart-verilog)
+
+---
+
+## License
 
 This project is open-source and available under the MIT License.

@@ -1,116 +1,111 @@
 module uart_rx (
-    input logic clk,
-    input logic rx,
-    input logic rst,
-    input logic rdy_clr,
-    input logic rx_en,
-    output logic[7:0] data_out,
-    output logic rdy
+    input  logic       clk,
+    input  logic       rst,
+    input  logic       rx,
+    input  logic       rx_en,
+    input  logic       rdy_clr,
+    output logic [7:0] data_out,
+    output logic       rdy
 );
-typedef enum logic [1:0] {
-    START,
-    DATA,
-    STOP,
-    IDLE
-}t_state;
 
-logic[3:0]sample,index,next_sample,next_index;
-logic[7:0] next_data_out;
-logic next_rdy;
-t_state state,next_state;
+    typedef enum logic [1:0] {
+        IDLE  = 2'b00,
+        START = 2'b01,
+        DATA  = 2'b10,
+        STOP  = 2'b11
+    } rx_state_t;
 
-always_ff @( posedge clk ) begin 
-    if(!rst) begin
-        rdy <= 1'b0;
-        state <= IDLE;
-        sample <= 4'b0000;
-        index <= 4'b0000;
-        next_rdy <= 1'b0;
-        next_state <= IDLE;
-        next_sample <= 4'b0000;
-        next_index <= 4'b0000;
-        
-    end
-    else begin
+    rx_state_t state;
+    logic [3:0] sample_cnt;
+    logic [2:0] bit_idx;
+    logic [7:0] rx_shift;
 
-        if(index == 7 && sample == 4'd15)begin
-            data_out <= next_data_out;
+    always_ff @(posedge clk) begin
+        if (!rst) begin
+            state      <= IDLE;
+            sample_cnt <= 4'd0;
+            bit_idx    <= 3'd0;
+            rx_shift   <= 8'h00;
+            data_out   <= 8'h00;
+            rdy        <= 1'b0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    sample_cnt <= 4'd0;
+                    bit_idx    <= 3'd0;
+                    // Detect start bit falling edge / low level
+                    if (!rx) begin
+                        state <= START;
+                    end
+                end
+
+                START: begin
+                    if (rx_en) begin
+                        if (sample_cnt == 4'd7) begin
+                            // Check for valid start bit (glitch rejection)
+                            if (rx != 1'b0) begin
+                                state      <= IDLE;
+                                sample_cnt <= 4'd0;
+                            end else begin
+                                sample_cnt <= sample_cnt + 1'b1;
+                            end
+                        end else if (sample_cnt == 4'd15) begin
+                            sample_cnt <= 4'd0;
+                            bit_idx    <= 3'd0;
+                            state      <= DATA;
+                        end else begin
+                            sample_cnt <= sample_cnt + 1'b1;
+                        end
+                    end
+                end
+
+                DATA: begin
+                    if (rx_en) begin
+                        if (sample_cnt == 4'd7) begin
+                            // Sample data at mid-bit
+                            rx_shift[bit_idx] <= rx;
+                            sample_cnt        <= sample_cnt + 1'b1;
+                        end else if (sample_cnt == 4'd15) begin
+                            sample_cnt <= 4'd0;
+                            if (bit_idx < 3'd7) begin
+                                bit_idx <= bit_idx + 1'b1;
+                            end else begin
+                                state <= STOP;
+                            end
+                        end else begin
+                            sample_cnt <= sample_cnt + 1'b1;
+                        end
+                    end
+                end
+
+                STOP: begin
+                    if (rx_en) begin
+                        if (sample_cnt == 4'd7) begin
+                            // Valid stop bit check at mid-bit
+                            if (rx == 1'b1) begin
+                                data_out <= rx_shift;
+                                rdy      <= 1'b1;
+                            end
+                            sample_cnt <= sample_cnt + 1'b1;
+                        end else if (sample_cnt == 4'd15) begin
+                            sample_cnt <= 4'd0;
+                            state      <= IDLE;
+                        end else begin
+                            sample_cnt <= sample_cnt + 1'b1;
+                        end
+                    end
+                end
+
+                default: begin
+                    state <= IDLE;
+                end
+            endcase
+
+            // Synchronous clear for ready flag has priority
+            if (rdy_clr) begin
+                rdy <= 1'b0;
+            end
         end
-        state <= next_state;
-        sample <= next_sample;
-        index <= next_index;
-        rdy <= next_rdy;
-        
     end
-end
-
-always_comb begin 
-    next_state = state;
-    next_sample = sample;
-    next_index = index;
-    case (state)
-        IDLE: begin
-             if(rdy_clr)begin
-            next_rdy = 1'b0;
-            end
-            if (rx == 0) begin  
-                next_state  = START;
-                next_sample = 0;
-            end
-        end    
-        
-        START: begin
-            if(rdy_clr)begin
-            next_rdy = 1'b0;
-            end
-            if(sample == 4'b1111 && rx_en)begin
-                next_state = DATA;
-                next_sample = 1'b0;
-            end
-            else if(rx_en) begin
-                next_sample = sample + 1;
-            
-             end
-        end
-        DATA: begin
-            if(sample == 4'd8 && rx_en) begin
-                
-                next_data_out[index] = rx; 
-                next_sample = sample + 1;
-            end
-            else if(index == 3'd7 && sample == 4'd15) begin
-                next_state = STOP;
-                next_sample = 1'd0;
-                next_index = 1'b0;
-            end
-            else if(sample == 4'd15 && rx_en) begin
-                next_sample = 4'b0000;
-                next_index = index + 1;
-            end
-
-            else if(rx_en)begin
-                next_sample = sample +1;
-            end
-
-
-         end
-
-    STOP: begin
-        next_rdy= 1;
-        if(rdy_clr)begin
-            next_rdy = 1'b0;
-            end
-        else if(sample == 4'd15) begin
-                next_state = IDLE;
-                next_sample = 1'b0;
-            end
-            else if(rx_en) begin
-                next_sample = sample + 1;
-            end
-    end
-         
-    endcase
-    
-end
 
 endmodule
