@@ -1,203 +1,151 @@
-# UART Transmitter and Receiver in Verilog
+# UART
+# UART Communication System in SystemVerilog
 
-A simple UART (Universal Asynchronous Receiver Transmitter) implementation in Verilog including:
+## Overview
 
-- UART Transmitter (TX)
-- UART Receiver (RX)
-- Testbench
-- Waveform Verification using Surfer/VCD
+This project is a complete **UART (Universal Asynchronous Receiver Transmitter)** implementation written in **SystemVerilog**.
+It includes:
+
+* UART Transmitter (`Uart_tx.sv`)
+* UART Receiver (`Uart_rx.sv`)
+* Top UART Module (`UART.sv`)
+* Testbench (`Uart_tb.sv`)
+* Additional experimental/test module (`trial.sv`)
+
+The project was developed as part of my digital design and VLSI learning journey focused on RTL design, communication protocols, and hardware verification.
 
 ---
 
 # Features
 
-✅ UART TX Module  
-✅ UART RX Module  
-✅ Configurable Baud Timing  
-✅ FSM-Based Design  
-✅ Simulation using Icarus Verilog  
-✅ Waveform Analysis using Surfer  
-✅ Successfully Transmits and Receives ASCII Character `'I'`
+* Fully written in **SystemVerilog**
+* Modular RTL design
+* UART TX and RX implementation
+* Testbench for simulation and verification
+* Designed for FPGA/ASIC learning
+* Clean and scalable architecture
+* Beginner-friendly communication protocol project
 
 ---
 
-# Project Structure
-
-```text
-uart/
-│── tx.v
-│── rx.v
-│── tb_uart.v
-│── dump.vcd
-│── README.md
-```
-
----
-
-# UART Frame Format
-
-```text
-| Start Bit | 8 Data Bits | Stop Bit |
-|     0     |   LSB First |     1    |
-```
-
----
-
-# Tools Used
-
-- Verilog HDL
-- Icarus Verilog
-- Surfer Waveform Viewer
-- macOS Terminal
-
----
-
-# Compilation and Simulation
-
-## Compile
+# File Structure
 
 ```bash
-iverilog -o uart_sim tb_uart.v tx.v rx.v
+├── UART.sv          # Top-level UART module
+├── Uart_tx.sv       # UART transmitter
+├── Uart_rx.sv       # UART receiver
+├── Uart_tb.sv       # Testbench for simulation
+├── trial.sv         # Experimental/testing module
+└── README.md
 ```
 
-## Run Simulation
+---
+
+# UART Basics
+
+UART is a serial communication protocol used for transmitting and receiving data between devices.
+
+### Communication Format
+
+```text
+| Start Bit | Data Bits | Stop Bit |
+```
+
+Typical UART configuration:
+
+* 8 Data Bits
+* No Parity
+* 1 Stop Bit
+
+---
+
+# Simulation
+
+This project can be simulated using:
+
+* ModelSim
+* QuestaSim
+* Vivado Simulator
+* Icarus Verilog
+* Verilator
+
+---
+
+# Example Compilation
+
+## Using Icarus Verilog
 
 ```bash
+iverilog -g2012 UART.sv Uart_tx.sv Uart_rx.sv Uart_tb.sv -o uart_sim
 vvp uart_sim
 ```
 
-## Open Waveform
+---
+
+# Waveform Viewing
+
+If waveform dumping is enabled:
 
 ```bash
-surfer dump.vcd
+gtkwave dump.vcd
 ```
 
 ---
 
-# Simulation Output
+# Learning Outcomes
 
-```text
-=================================
-Time = 9925
-Received Data = 01001001
-Received Character = I
-=================================
-```
+Through this project I learned:
 
----
-
-# Waveform
-
-<img width="1191" height="439" alt="waveform" src="https://github.com/user-attachments/assets/4aeb0a16-94c2-4b79-a1a7-65ae6fed979c" />
-
----
-
-# How UART TX Works
-
-The transmitter:
-
-1. Waits for `tx_start`
-2. Sends Start Bit (`0`)
-3. Sends 8 Data Bits
-4. Sends Stop Bit (`1`)
-5. Returns to IDLE state
-
----
-
-# How UART RX Works
-
-The receiver:
-
-1. Detects Start Bit
-2. Samples incoming bits using baud timing
-3. Stores received bits
-4. Reconstructs the byte
-5. Sets `rx_done = 1`
-
----
-
-# FSM States
-
-## TX FSM
-
-```text
-IDLE -> START -> DATA -> STOP -> IDLE
-```
-
-## RX FSM
-
-```text
-IDLE -> START -> DATA -> STOP -> IDLE
-```
-
----
-
-# Example Transmission
-
-Character Sent:
-
-```text
-'I'
-```
-
-ASCII:
-
-```text
-01001001
-```
-
-Hex:
-
-```text
-0x49
-```
-
----
-
-# Internal Signals Observed
-
-## TX Signals
-
-- `tx`
-- `tx_data`
-- `tx_start`
-
-## RX Signals
-
-- `rx_data`
-- `rx_done`
-
-## Common Signals
-
-- `clk`
-- `rst`
-- `serial_line`
-
----
-
-# Waveform Verification
-
-The waveform confirms:
-
-✅ Start Bit Detection  
-✅ Correct Bit Timing  
-✅ Serial Transmission  
-✅ Correct Data Reconstruction  
-✅ Successful UART Communication
+* RTL Design using SystemVerilog
+* Finite State Machines (FSMs)
+* Serial Communication Protocols
+* Timing and Synchronization
+* Testbench Development
+* Digital Design Debugging
+* Hardware Verification Basics
 
 ---
 
 # Future Improvements
 
-- Configurable Baud Rate
-- Parity Bit Support
-- FIFO Buffer
-- Full Duplex UART
-- FPGA Implementation
-- Error Detection
+Planned upgrades for the project:
+
+* Configurable baud rate generator
+* Parity bit support
+* FIFO buffering
+* Error detection
+* AXI/APB interface integration
+* FPGA implementation
 
 ---
 
-# Author
+# About Me
 
-Yashvi Doshi
+I am an Electronics and VLSI student passionate about:
+
+* Computer Architecture
+* Digital Design
+* RTL Development
+* FPGA Design
+* Processor Design
+* Low-Level Hardware Systems
+
+Currently building larger hardware projects including custom CPUs and digital systems.
+
+---
+
+# Connect With Me
+
+## GitHub
+
+[https://github.com/Mage-imm](https://github.com/Mage-imm)
+
+## LinkedIn
+
+[https://linkedin.com/in/manav-shah-0630863ab](https://linkedin.com/in/manav-shah-0630863ab)
+
+---
+
+# License
+
+This project is open-source and available under the MIT License.
